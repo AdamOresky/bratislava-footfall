@@ -15,6 +15,10 @@ class SensorSummary(BaseModel):
     name: str
     lat: float
     lon: float
+    avg_daily_count: int | None = Field(
+        description="Average pedestrians per day over the last 365 days of data, "
+        "counting only days with data above 0; null if there is no such day"
+    )
 
 
 class Sensor(SensorSummary):

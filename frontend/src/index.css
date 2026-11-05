@@ -23,6 +23,115 @@ body {
     flex: 1;
 }
 
-.date-picker {
-    max-width: 14rem;
+/* Legend floats over the bottom-left corner of the map */
+.map-page {
+    position: relative;
+}
+
+.map-legend {
+    position: absolute;
+    left: 1rem;
+    bottom: 1.5rem;
+    z-index: 1000;   /* above Leaflet panes */
+    padding: 0.75rem 1rem;
+    background: #ffffff;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+    max-width: calc(100% - 2rem);
+}
+
+.map-legend__row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.25rem;
+}
+
+/* Count label in the middle of a grouped circle: plain text, no tooltip box */
+.leaflet-tooltip.map-group-count {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 0.8rem;
+}
+
+.leaflet-tooltip.map-group-count::before {
+    display: none;
+}
+
+/* Several sensors in one popup */
+.map-popup-sensor + .map-popup-sensor {
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid #e4e4e7;
+}
+
+.map-legend__title {
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-size: 0.75rem;
+    color: #52525b;
+    margin-bottom: 0.25rem;
+}
+
+/* All legend dots share one size, so the rows line up */
+.map-legend__dot {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 50%;
+    border: 2px solid #ffffff;
+    box-shadow: 0 0 0 1px #d4d4d8;
+    opacity: 0.75;
+}
+
+/* Day picker: ‹ [calendar input] › */
+.day-picker {
+    max-width: 24rem;
+    flex-wrap: nowrap;
+}
+
+.day-picker .react-datepicker-wrapper {
+    flex: 1;
+}
+
+.day-picker .form-control {
+    border-radius: 0;
+    text-align: center;
+    cursor: pointer;
+}
+
+/* Calendar popup in the app's look */
+.react-datepicker {
+    font-family: inherit;
+    border-color: #e4e4e7;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.react-datepicker__header {
+    background-color: #fafafa;
+    border-bottom-color: #e4e4e7;
+}
+
+.react-datepicker__day--selected,
+.react-datepicker__day--keyboard-selected {
+    background-color: #2a78d6;
+    color: #ffffff;
+}
+
+.react-datepicker__day--disabled {
+    color: #d4d4d8;
+}
+
+/* Sample of a grouped circle: number inside, like on the map */
+.map-legend__dot--group {
+    color: #ffffff;
+    font-size: 0.65rem;
+    font-weight: 600;
 }

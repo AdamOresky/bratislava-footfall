@@ -13,6 +13,7 @@ export interface SensorSummary {
     name: string,
     lat: number,
     lon: number,
+    avg_daily_count: number | null,   // null = no measurements in the last year
 }
 
 export interface Sensor extends SensorSummary {

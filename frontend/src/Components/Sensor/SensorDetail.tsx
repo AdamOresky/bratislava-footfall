@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Alert, Card, Col, Container, Form, Row, Spinner } from 'react-bootstrap';
+import { Alert, Card, Col, Container, Row, Spinner } from 'react-bootstrap';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { FailureMessage, type DayCounts, type Sensor } from '../../Models/Models';
 import { SensorService } from '../../Services/SensorService';
 import { Utils } from '../../Services/Utils';
 import HourlyChartComponent from './HourlyChart';
+import DayPickerComponent from './DayPicker';
 
 const SensorDetailComponent = () => {
     const { sensorId } = useParams();
@@ -72,16 +73,17 @@ const SensorDetailComponent = () => {
                 Dáta od {Utils.formatDate(sensor.first_seen)} do {Utils.formatDate(sensor.last_seen)}
             </p>
 
-            <Form.Group className="mb-4 date-picker">
-                <Form.Label>Deň</Form.Label>
-                <Form.Control
-                    type="date"
-                    value={date ?? ""}
-                    min={Utils.toLocalDate(sensor.first_seen)}
-                    max={Utils.toLocalDate(sensor.last_seen)}
-                    onChange={e => setSearchParams({ date: e.target.value })}
-                />
-            </Form.Group>
+            {date && (
+                <div className="mb-4">
+                    <div className="form-label">Deň</div>
+                    <DayPickerComponent
+                        value={date}
+                        min={Utils.toLocalDate(sensor.first_seen)}
+                        max={Utils.toLocalDate(sensor.last_seen)}
+                        onChange={newDate => setSearchParams({ date: newDate })}
+                    />
+                </div>
+            )}
 
             {dayCounts === null && <Spinner animation="border" />}
 

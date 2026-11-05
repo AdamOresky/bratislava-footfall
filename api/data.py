@@ -21,6 +21,9 @@ LOCAL_TZ = "Europe/Bratislava"
 
 COUNT_FIELDS = ["timestamp", "count_to", "count_from", "count"]
 
+# Map intensity is averaged over this many most recent days of the dataset.
+INTENSITY_DAYS = 365
+
 
 class FootfallData:
     """Sensors and hourly counts held in memory."""
@@ -33,6 +36,9 @@ class FootfallData:
             last_seen=_to_local(sensors["last_seen"]),
         )
         counts = counts.assign(timestamp=_to_local(counts["timestamp"]))
+        sensors = sensors.assign(
+            avg_daily_count=sensors["sensor_id"].map(_avg_daily_counts(counts))
+        )
 
         self._sensors = sensors.set_index("sensor_id", drop=False).sort_index()
         # One table per sensor, so a request only scans that sensor's rows.
@@ -89,6 +95,24 @@ def hours_of_day(day: dt.date) -> list[pd.Timestamp]:
     """Start of every hour of ``day``: 24, or 23 / 25 on clock change days."""
     start, end = day_bounds(day)
     return list(pd.date_range(start, end, freq="h", inclusive="left"))
+
+
+def _avg_daily_counts(counts: pd.DataFrame) -> pd.Series:
+    """Average daily total per sensor over the last ``INTENSITY_DAYS`` days of data.
+
+    Only days with at least one count above 0 are averaged, so outages do
+    not pull the average down. Sensors without such a day are left out.
+    """
+    daily = (
+        counts.assign(day=counts["timestamp"].dt.date)
+        .groupby(["sensor_id", "day"])["count"]
+        .sum()
+        .reset_index()
+    )
+    window_start = daily["day"].max() - dt.timedelta(days=INTENSITY_DAYS - 1)
+    recent_active = daily[(daily["day"] >= window_start) & (daily["count"] > 0)]
+
+    return recent_active.groupby("sensor_id")["count"].mean().round()
 
 
 def _to_local(times: pd.Series) -> pd.Series:

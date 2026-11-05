@@ -84,7 +84,7 @@ Interaktívna dokumentácia: http://127.0.0.1:8000/docs
 
 | endpoint | popis                                               |
 |---|-----------------------------------------------------|
-| `GET /sensors` | všetky sčítače: `sensor_id`, `name`, `lat`, `lon` |
+| `GET /sensors` | všetky sčítače: `sensor_id`, `name`, `lat`, `lon`, `avg_daily_count` (priemer chodcov za deň za posledných 365 dní, iba dni s meraním) |
 | `GET /sensors/{sensor_id}` | jeden sčítač so smermi a obdobím dát |
 | `GET /sensors/{sensor_id}/counts?date=2025-04-18` | hodinové počty za deň v bratislavskom časovom pásme |
 
