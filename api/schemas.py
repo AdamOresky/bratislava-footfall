@@ -38,6 +38,35 @@ class HourlyCount(BaseModel):
     count: int
 
 
+class WeekHour(BaseModel):
+    weekday: int = Field(description="0 = Monday … 6 = Sunday")
+    hour: int = Field(description="0–23, Bratislava time")
+    count_to: int = Field(description="Average")
+    count_from: int = Field(description="Average")
+    count: int = Field(description="Average")
+
+
+class TypicalWeek(BaseModel):
+    sensor_id: int
+    timezone: str
+    period_start: dt.date = Field(description="First day of the period the averages use")
+    period_end: dt.date
+    active_days: int = Field(description="Days in the period with a count above 0 (the ones averaged)")
+    hours: list[WeekHour] = Field(description="Empty when the sensor has no active day in the period")
+
+
+class MonthStats(BaseModel):
+    month: str = Field(description="YYYY-MM")
+    days_in_month: int
+    active_days: int = Field(description="Days with a count above 0")
+    avg_daily_count: int | None = Field(description="Average daily count over active days; null if none")
+
+
+class Months(BaseModel):
+    sensor_id: int
+    months: list[MonthStats]
+
+
 class Counts(BaseModel):
     count_to: int
     count_from: int

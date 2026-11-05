@@ -1,4 +1,4 @@
-import type { DayCounts, Sensor, SensorSummary } from "../Models/Models";
+import type { DayCounts, Months, Sensor, SensorSummary, TypicalWeek } from "../Models/Models";
 import HttpRepository from "./HttpRepository";
 
 // Every function returns null on error; the component shows the message.
@@ -31,5 +31,23 @@ export function SensorService() {
         }
     }
 
-    return { getSensors, getSensor, getDayCounts }
+    async function getTypicalWeek(sensorId: number): Promise<TypicalWeek | null> {
+        try {
+            return (await HttpRepository.getTypicalWeek(sensorId)).data;
+        }
+        catch {
+            return null;
+        }
+    }
+
+    async function getMonths(sensorId: number): Promise<Months | null> {
+        try {
+            return (await HttpRepository.getMonths(sensorId)).data;
+        }
+        catch {
+            return null;
+        }
+    }
+
+    return { getSensors, getSensor, getDayCounts, getTypicalWeek, getMonths }
 }

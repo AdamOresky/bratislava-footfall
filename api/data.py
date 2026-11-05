@@ -19,10 +19,11 @@ from pipeline.build import PROCESSED_DIR
 
 LOCAL_TZ = "Europe/Bratislava"
 
-COUNT_FIELDS = ["timestamp", "count_to", "count_from", "count"]
+SUM_FIELDS = ["count_to", "count_from", "count"]
+COUNT_FIELDS = ["timestamp", *SUM_FIELDS]
 
-# Map intensity is averaged over this many most recent days of the dataset.
-INTENSITY_DAYS = 365
+# Map intensity and the typical week use this many most recent days of the dataset.
+RECENT_DAYS = 365
 
 
 class FootfallData:
@@ -36,9 +37,15 @@ class FootfallData:
             last_seen=_to_local(sensors["last_seen"]),
         )
         counts = counts.assign(timestamp=_to_local(counts["timestamp"]))
-        sensors = sensors.assign(
-            avg_daily_count=sensors["sensor_id"].map(_avg_daily_counts(counts))
-        )
+        counts = counts.assign(day=counts["timestamp"].dt.date)
+
+        # Daily totals per sensor: base for the map intensity, typical week and months.
+        self._daily = counts.groupby(["sensor_id", "day"])[SUM_FIELDS].sum().reset_index()
+        self.recent_end = self._daily["day"].max()
+        self.recent_start = self.recent_end - dt.timedelta(days=RECENT_DAYS - 1)
+
+        avg_daily = self._recent_active_days().groupby("sensor_id")["count"].mean().round()
+        sensors = sensors.assign(avg_daily_count=sensors["sensor_id"].map(avg_daily))
 
         self._sensors = sensors.set_index("sensor_id", drop=False).sort_index()
         # One table per sensor, so a request only scans that sensor's rows.
@@ -83,6 +90,64 @@ class FootfallData:
 
         return _to_records(counts.loc[in_day, COUNT_FIELDS])
 
+    def typical_week(self, sensor_id: int) -> dict:
+        """Average count per weekday and hour (Bratislava time) over recent active days.
+
+        Uses the last ``RECENT_DAYS`` days of data, only days with a count above 0,
+        so outages do not pull the averages down. Weekday 0 is Monday.
+        """
+        active = self._recent_active_days()
+        active_days = set(active.loc[active["sensor_id"] == sensor_id, "day"])
+        counts = self._counts.get(sensor_id)
+        if counts is None or not active_days:
+            return {"active_days": 0, "hours": []}
+
+        rows = counts[counts["day"].isin(active_days)]
+        profile = (
+            rows.assign(weekday=rows["timestamp"].dt.weekday, hour=rows["timestamp"].dt.hour)
+            .groupby(["weekday", "hour"])[SUM_FIELDS]
+            .mean()
+            .round()
+            .reset_index()
+        )
+        return {"active_days": len(active_days), "hours": _to_records(profile)}
+
+    def months(self, sensor_id: int) -> list[dict]:
+        """Per calendar month of the whole history: active days and their average daily count.
+
+        Every month between the first and the last one is listed, also months
+        without any active day (``avg_daily_count`` is then null).
+        """
+        daily = self._daily[self._daily["sensor_id"] == sensor_id]
+        if daily.empty:
+            return []
+
+        stats = (
+            daily.assign(
+                month=pd.to_datetime(daily["day"]).dt.to_period("M"),
+                is_active=daily["count"] > 0,
+            )
+            .groupby("month")
+            .agg(active_days=("is_active", "sum"), total=("count", "sum"))
+        )
+        all_months = pd.period_range(stats.index.min(), stats.index.max(), freq="M")
+        stats = stats.reindex(all_months, fill_value=0)
+
+        return [
+            {
+                "month": str(month),
+                "days_in_month": month.days_in_month,
+                "active_days": int(row.active_days),
+                "avg_daily_count": round(row.total / row.active_days) if row.active_days else None,
+            }
+            for month, row in stats.iterrows()
+        ]
+
+    def _recent_active_days(self) -> pd.DataFrame:
+        """Daily totals in the last ``RECENT_DAYS`` days, only days with a count above 0."""
+        daily = self._daily
+        return daily[(daily["day"] >= self.recent_start) & (daily["count"] > 0)]
+
 
 def day_bounds(day: dt.date) -> tuple[pd.Timestamp, pd.Timestamp]:
     """Local midnight at the start of ``day`` and at the start of the next day."""
@@ -95,24 +160,6 @@ def hours_of_day(day: dt.date) -> list[pd.Timestamp]:
     """Start of every hour of ``day``: 24, or 23 / 25 on clock change days."""
     start, end = day_bounds(day)
     return list(pd.date_range(start, end, freq="h", inclusive="left"))
-
-
-def _avg_daily_counts(counts: pd.DataFrame) -> pd.Series:
-    """Average daily total per sensor over the last ``INTENSITY_DAYS`` days of data.
-
-    Only days with at least one count above 0 are averaged, so outages do
-    not pull the average down. Sensors without such a day are left out.
-    """
-    daily = (
-        counts.assign(day=counts["timestamp"].dt.date)
-        .groupby(["sensor_id", "day"])["count"]
-        .sum()
-        .reset_index()
-    )
-    window_start = daily["day"].max() - dt.timedelta(days=INTENSITY_DAYS - 1)
-    recent_active = daily[(daily["day"] >= window_start) & (daily["count"] > 0)]
-
-    return recent_active.groupby("sensor_id")["count"].mean().round()
 
 
 def _to_local(times: pd.Series) -> pd.Series:

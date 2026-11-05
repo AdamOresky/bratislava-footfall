@@ -1,3 +1,4 @@
+import { format, parseISO, subDays } from "date-fns";
 import { Constants } from "../Models/Constants";
 
 export class Utils {
@@ -18,6 +19,14 @@ export class Utils {
     public static toLocalDate(timestamp: string): string {
         // sv-SE formats dates as YYYY-MM-DD, the format <input type="date"> and the API use
         return new Date(timestamp).toLocaleDateString('sv-SE', { timeZone: Constants.timeZone });
+    }
+
+    /** Day before the last day with data ("YYYY-MM-DD"), but never before the first one. */
+    public static defaultDay(firstSeen: string, lastSeen: string): string {
+        const lastDay = Utils.toLocalDate(lastSeen);
+        const dayBefore = format(subDays(parseISO(lastDay), 1), 'yyyy-MM-dd');
+        const firstDay = Utils.toLocalDate(firstSeen);
+        return dayBefore < firstDay ? firstDay : dayBefore;
     }
 
     /** "2026-07-10T01:00:00+02:00" -> "10. 7. 2026" */

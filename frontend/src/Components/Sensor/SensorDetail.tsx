@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
-import { Alert, Card, Col, Container, Row, Spinner } from 'react-bootstrap';
+import { Alert, Card, Col, Container, Row, Spinner, Tab, Tabs } from 'react-bootstrap';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { FailureMessage, type DayCounts, type Sensor } from '../../Models/Models';
 import { SensorService } from '../../Services/SensorService';
 import { Utils } from '../../Services/Utils';
 import HourlyChartComponent from './HourlyChart';
 import DayPickerComponent from './DayPicker';
+import TypicalWeekComponent from './TypicalWeek';
+import MonthlyStatsComponent from './MonthlyStats';
 
 const SensorDetailComponent = () => {
     const { sensorId } = useParams();
@@ -18,8 +20,18 @@ const SensorDetailComponent = () => {
 
     const id = Number(sensorId);
     const date = searchParams.get("date");
+    const view = searchParams.get("view") ?? "day";   // tab: day | week | months
 
-    // Sensor info; without ?date= jump to the last day with data
+    // Change one URL parameter and keep the others (?date= and ?view= live side by side)
+    const setParam = (key: string, value: string, replace = false) => {
+        setSearchParams(params => {
+            params.set(key, value);
+            return params;
+        }, { replace });
+    };
+
+    // Sensor info; without ?date= show the day before the last one
+    // (the last day is usually incomplete, the export ends in the middle of it)
     useEffect(() => {
         getSensor(id).then(result => {
             if (result === null) {
@@ -30,7 +42,7 @@ const SensorDetailComponent = () => {
             Utils.setDocumentTitle(result.name);
 
             if (!date) {
-                setSearchParams({ date: Utils.toLocalDate(result.last_seen) }, { replace: true });
+                setParam("date", Utils.defaultDay(result.first_seen, result.last_seen), true);
             }
         });
     }, [id]);
@@ -65,14 +77,8 @@ const SensorDetailComponent = () => {
 
     const dirFrom = sensor.dir_from || "druhý smer";
 
-    return (
-        <Container className="py-4">
-            <Link to="/">← Späť na mapu</Link>
-            <h1 className="h3 mt-3 mb-1">{sensor.name}</h1>
-            <p className="text-secondary">
-                Dáta od {Utils.formatDate(sensor.first_seen)} do {Utils.formatDate(sensor.last_seen)}
-            </p>
-
+    const dayView = (
+        <>
             {date && (
                 <div className="mb-4">
                     <div className="form-label">Deň</div>
@@ -80,7 +86,7 @@ const SensorDetailComponent = () => {
                         value={date}
                         min={Utils.toLocalDate(sensor.first_seen)}
                         max={Utils.toLocalDate(sensor.last_seen)}
-                        onChange={newDate => setSearchParams({ date: newDate })}
+                        onChange={newDate => setParam("date", newDate)}
                     />
                 </div>
             )}
@@ -107,9 +113,31 @@ const SensorDetailComponent = () => {
                         <Col sm={4}><TotalCard label="Spolu" value={dayCounts.counts_total.count} /></Col>
                     </Row>
 
-                    <HourlyChartComponent counts={dayCounts.counts_by_hour} dirTo={sensor.dir_to} dirFrom={dirFrom} />
+                    <HourlyChartComponent
+                        counts={dayCounts.counts_by_hour}
+                        missingHours={dayCounts.missing_hours}
+                        dirTo={sensor.dir_to}
+                        dirFrom={dirFrom}
+                    />
                 </>
             )}
+        </>
+    );
+
+    return (
+        <Container className="py-4">
+            <Link to="/">← Späť na mapu</Link>
+            <h1 className="h3 mt-3 mb-1">{sensor.name}</h1>
+            <p className="text-secondary">
+                Dáta od {Utils.formatDate(sensor.first_seen)} do {Utils.formatDate(sensor.last_seen)}
+            </p>
+
+            {/* mountOnEnter: a tab loads its data only when opened */}
+            <Tabs activeKey={view} onSelect={key => key && setParam("view", key)} className="mb-4" mountOnEnter>
+                <Tab eventKey="day" title="Deň">{dayView}</Tab>
+                <Tab eventKey="week" title="Typický týždeň"><TypicalWeekComponent sensorId={id} /></Tab>
+                <Tab eventKey="months" title="Mesiace"><MonthlyStatsComponent sensorId={id} /></Tab>
+            </Tabs>
         </Container>
     );
 };

@@ -87,6 +87,8 @@ Interaktívna dokumentácia: http://127.0.0.1:8000/docs
 | `GET /sensors` | všetky sčítače: `sensor_id`, `name`, `lat`, `lon`, `avg_daily_count` (priemer chodcov za deň za posledných 365 dní, iba dni s meraním) |
 | `GET /sensors/{sensor_id}` | jeden sčítač so smermi a obdobím dát |
 | `GET /sensors/{sensor_id}/counts?date=2025-04-18` | hodinové počty za deň v bratislavskom časovom pásme |
+| `GET /sensors/{sensor_id}/typical-week` | priemerný počet za hodinu podľa dňa v týždni (posledných 365 dní, iba dni s meraním) |
+| `GET /sensors/{sensor_id}/months` | priemerný počet za deň v každom mesiaci celej histórie (iba dni s meraním) |
 
 Parquet súbory ukladajú UTC, API vracia časy v `Europe/Bratislava` s posunom,
 napr. `2025-03-30T00:00:00+01:00` (ten istý okamih ako `2025-03-29T23:00:00Z`).

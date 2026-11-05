@@ -13,7 +13,7 @@ from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 
 from api.data import LOCAL_TZ, FootfallData, get_data, hours_of_day
-from api.schemas import DayCounts, Sensor, SensorSummary
+from api.schemas import DayCounts, Months, Sensor, SensorSummary, TypicalWeek
 
 app = FastAPI(
     title="Bratislava footfall API",
@@ -82,6 +82,26 @@ def get_day_counts(
         "counts_total": counts_total,
         "counts_by_hour": counts_by_hour,
     }
+
+
+@app.get("/sensors/{sensor_id}/typical-week", response_model=TypicalWeek)
+def get_typical_week(sensor_id: int, data: Data):
+    """Average hourly counts per weekday over the last 365 days of data (active days only)."""
+    require_sensor(sensor_id, data)
+    return {
+        "sensor_id": sensor_id,
+        "timezone": LOCAL_TZ,
+        "period_start": data.recent_start,
+        "period_end": data.recent_end,
+        **data.typical_week(sensor_id),
+    }
+
+
+@app.get("/sensors/{sensor_id}/months", response_model=Months)
+def get_months(sensor_id: int, data: Data):
+    """Average daily count per calendar month over the whole history (active days only)."""
+    require_sensor(sensor_id, data)
+    return {"sensor_id": sensor_id, "months": data.months(sensor_id)}
 
 
 def sum_counts(rows: list[dict]) -> dict | None:

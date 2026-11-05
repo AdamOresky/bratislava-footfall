@@ -51,3 +51,33 @@ export interface DayCounts {
 }
 
 // endregion
+
+// region Statistics
+
+export interface WeekHour extends Counts {   // averages
+    weekday: number,       // 0 = Monday … 6 = Sunday
+    hour: number,          // 0–23, Bratislava time
+}
+
+export interface TypicalWeek {
+    sensor_id: number,
+    timezone: string,
+    period_start: string,  // "YYYY-MM-DD"
+    period_end: string,
+    active_days: number,
+    hours: WeekHour[],
+}
+
+export interface MonthStats {
+    month: string,         // "YYYY-MM"
+    days_in_month: number,
+    active_days: number,
+    avg_daily_count: number | null,
+}
+
+export interface Months {
+    sensor_id: number,
+    months: MonthStats[],
+}
+
+// endregion
