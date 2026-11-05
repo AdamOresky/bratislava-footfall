@@ -6,7 +6,9 @@ import type { SensorSummary } from '../../Models/Models';
 import { Utils } from '../../Services/Utils';
 
 export const COLOR_ACTIVE = '#2a78d6';
-export const COLOR_INACTIVE = '#a1a1aa';
+export const COLOR_INACTIVE = '#52525b';   // outline of a sensor without data
+const COLOR_FOCUS = '#eb6834';             // ring of the sensor hovered in the list
+const FOCUS_ZOOM = 16;
 export const MIN_RADIUS = 5;
 export const MAX_RADIUS = 24;
 
@@ -51,9 +53,10 @@ function groupOverlapping(sensors: SensorSummary[], map: LeafletMap, maxCount: n
 interface SensorMarkersProps {
     sensors: SensorSummary[],
     maxCount: number,
+    focusedId: number | null,
 }
 
-const SensorMarkersComponent = ({ sensors, maxCount }: SensorMarkersProps) => {
+const SensorMarkersComponent = ({ sensors, maxCount, focusedId }: SensorMarkersProps) => {
     const map = useMap();
     const [zoom, setZoom] = useState(map.getZoom());
     useMapEvents({ zoomend: () => setZoom(map.getZoom()) });
@@ -68,28 +71,43 @@ const SensorMarkersComponent = ({ sensors, maxCount }: SensorMarkersProps) => {
         hasFitted.current = true;
     }, [sensors]);
 
-    const groups = groupOverlapping(sensors, map, maxCount);
+    // Sensor hovered in the list: fly there (never zoom out if already closer)
+    useEffect(() => {
+        const focused = sensors.find(s => s.sensor_id === focusedId);
+        if (focused) {
+            map.flyTo([focused.lat, focused.lon], Math.max(map.getZoom(), FOCUS_ZOOM), { duration: 0.8 });
+        }
+    }, [focusedId]);
+
+    const isFocused = (group: SensorGroup) => group.sensors.some(s => s.sensor_id === focusedId);
+
+    // Focused group drawn last, so it sits on top of its neighbours
+    const groups = groupOverlapping(sensors, map, maxCount)
+        .sort((a, b) => Number(isFocused(a)) - Number(isFocused(b)));
 
     return (
         <>
             {groups.map(group => {
                 const first = group.sensors[0];
                 const isActive = group.sensors.some(s => s.avg_daily_count !== null);
+                const style = isActive
+                    ? { color: '#ffffff', weight: 2, fillColor: COLOR_ACTIVE, fillOpacity: 0.85 }
+                    // No data: white circle with a dark outline, stands out on the gray map
+                    : { color: COLOR_INACTIVE, weight: 2.5, fillColor: '#ffffff', fillOpacity: 1 };
 
                 return (
                     <CircleMarker
                         key={`${zoom}-${first.sensor_id}`}
                         center={[first.lat, first.lon]}
-                        radius={group.radius}
-                        pathOptions={{
-                            color: '#ffffff',
-                            weight: 2,
-                            fillColor: isActive ? COLOR_ACTIVE : COLOR_INACTIVE,
-                            fillOpacity: 0.75,
-                        }}
+                        radius={isFocused(group) ? group.radius + 4 : group.radius}
+                        pathOptions={isFocused(group) ? { ...style, color: COLOR_FOCUS, weight: 4 } : style}
                     >
                         {group.sensors.length > 1 && (
-                            <Tooltip permanent direction="center" className="map-group-count">
+                            <Tooltip
+                                permanent
+                                direction="center"
+                                className={isActive ? 'map-group-count' : 'map-group-count map-group-count--inactive'}
+                            >
                                 {group.sensors.length}
                             </Tooltip>
                         )}
