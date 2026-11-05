@@ -1,2 +1,3 @@
 pandas>=2.2
 pyarrow>=17
+fastapi[standard]>=0.115

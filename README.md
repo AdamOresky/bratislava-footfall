@@ -43,7 +43,7 @@ a vytvorí v `data/processed/`:
 | súbor | obsah |
 |---|---|
 | `sensors.parquet` | 23 riadkov: `sensor_id`, `name`, poloha, smery, obdobie dát (`first_seen`, `last_seen`, `hours`) |
-| `counts.parquet` | ~800 tis. riadkov: hodinové počty (`sensor_id`, `timestamp` v UTC, `count_to`, `count_from`, `count`), ~6 MB |
+| `counts.parquet` | ~800 tis. riadkov: hodinové počty (`sensor_id`, `timestamp` v UTC, `count_to`, `count_from`, `count`) |
 
 Tabuľky sú prepojené stĺpcom `sensor_id`. ID je číslo, ktoré mesto uvádza v názve
 sčítača („#11 - Most Apollo“ => 11). Staršie sčítače bez čísla majú pevne pridelené
@@ -66,15 +66,53 @@ používajú sa ako kľúče a v URL API.
 - #18 a #19 majú v zdroji identické súradnice, hoci ide o rôzne miesta.
 - Cyklomost Slobody, Devínska Nová Ves, Hrádza Berg a Viedenská sú staršie sčítače
   (dáta od 2014 / 2019) bez čísla.
+- V niektorých dňoch chýbajú hodinové záznamy, napr. jedna z dvoch hodín 02:00
+  pri jesennej zmene času. API ich nedopĺňa, uvádza ich v `missing_hours`.
+- Niektoré sčítače majú celé dni (aj dlhé obdobia) so samými nulami. Zo zdroja
+  sa nedá zistiť, či ide o výpadok, alebo o skutočnú nulu. API takýto deň vracia
+  s `was_active: false`.
+
+## API
+
+FastAPI nad výstupmi pipeline (najprv spustite `python -m pipeline.build`):
+
+```
+uvicorn api.main:app --reload
+```
+
+Interaktívna dokumentácia: http://127.0.0.1:8000/docs
+
+| endpoint | popis                                               |
+|---|-----------------------------------------------------|
+| `GET /sensors` | všetky sčítače: `sensor_id`, `name`, `lat`, `lon` |
+| `GET /sensors/{sensor_id}` | jeden sčítač so smermi a obdobím dát |
+| `GET /sensors/{sensor_id}/counts?date=2025-04-18` | hodinové počty za deň v bratislavskom časovom pásme |
+
+Parquet súbory ukladajú UTC, API vracia časy v `Europe/Bratislava` s posunom,
+napr. `2025-03-30T00:00:00+01:00` (ten istý okamih ako `2025-03-29T23:00:00Z`).
+Deň v `?date=` sa berie v bratislavskom časovom pásme. Bežný deň má 24 hodín, deň zmeny
+času 23 (marec) alebo 25 (október).
+
+Odpoveď `/counts` obsahuje okrem hodinových počtov aj:
+
+| pole | význam |
+|---|---|
+| `was_active` | `false`, ak deň nemá záznamy alebo sú všetky počty 0 |
+| `hours_with_data` / `hours_in_day` | koľko hodín má záznam / koľko hodín má deň |
+| `missing_hours` | začiatky hodín bez záznamu (prázdne pri úplnom dni) |
+| `counts_total` | súčet za deň, `null` ak deň nemá záznamy |
 
 ## Štruktúra
 
 ```
-data/raw/          surové dáta (CSV, necommitnuté, verejne stiahnuteľné)
-data/processed/    výstupy pipeline (generované, necommitujú sa)
+data/raw/             surové dáta (CSV, necommitnuté, verejne stiahnuteľné)
+data/processed/       výstupy pipeline (generované, necommitujú sa)
 pipeline/source.py    E: načítanie dát a zjednotenie stĺpcov
 pipeline/transform.py T: čisté funkcie DataFrame → DataFrame
 pipeline/build.py     orchestrácia E => T => L, vstupný bod pipeline
+api/data.py           načítanie parquet súborov a dotazy nad nimi
+api/schemas.py        tvar JSON odpovedí (Pydantic modely)
+api/main.py           FastAPI endpointy
 ```
 
 ## Ďalšie kroky
