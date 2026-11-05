@@ -21,9 +21,10 @@ app = FastAPI(
     "Source: Hlavné mesto SR Bratislava, CC BY 4.0.",
 )
 
-# Lets the React dev server (localhost / 127.0.0.1, any port) call the API from the browser.
+# Browsers may call the API from the live site and from the React dev server (any local port).
 app.add_middleware(
     CORSMiddleware,
+    allow_origins=["https://chodci.oresky.sk"],
     allow_origin_regex=r"http://(localhost|127\.0\.0\.1):\d+",
     allow_methods=["GET"],
 )

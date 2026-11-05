@@ -1,0 +1,14 @@
+# systemd service for the API. On the server: /etc/systemd/system/chodci-api.service
+# --root-path /api: nginx serves the API under /api, so /api/docs works.
+[Unit]
+Description=Chodci API
+After=network.target
+
+[Service]
+User=chodci
+WorkingDirectory=/home/chodci/app
+ExecStart=/home/chodci/app/.venv/bin/uvicorn api.main:app --host 127.0.0.1 --port 8000 --root-path /api
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

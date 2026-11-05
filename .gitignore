@@ -7,8 +7,7 @@ venv/
 # IDE
 .idea/
 
-# Data: raw CSV is ~87 MB (too big for GitHub), download it per README
+# Data: raw CSV is ~87 MB (too big for GitHub), download it per README.
+# data/processed/*.parquet (~4 MB) IS committed: the API serves exactly these files.
 data/raw/*
 !data/raw/.gitkeep
-data/processed/*
-!data/processed/.gitkeep

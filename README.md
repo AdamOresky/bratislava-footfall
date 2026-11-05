@@ -1,5 +1,7 @@
 # Bratislava footfall
 
+**▶ Live demo: [chodci.oresky.sk](https://chodci.oresky.sk)** · API dokumentácia: [chodci.oresky.sk/api/docs](https://chodci.oresky.sk/api/docs)
+
 Analýza a vizualizácia hodinových dát o pohybe chodcov zo sčítačov v meste Bratislava.
 
 ## Dáta
@@ -108,7 +110,7 @@ Odpoveď `/counts` obsahuje okrem hodinových počtov aj:
 
 ```
 data/raw/             surové dáta (CSV, necommitnuté, verejne stiahnuteľné)
-data/processed/       výstupy pipeline (generované, necommitujú sa)
+data/processed/       výstupy pipeline (parquet, nahrávajú sa na server)
 pipeline/source.py    E: načítanie dát a zjednotenie stĺpcov
 pipeline/transform.py T: čisté funkcie DataFrame → DataFrame
 pipeline/build.py     orchestrácia E => T => L, vstupný bod pipeline
@@ -116,6 +118,7 @@ api/data.py           načítanie parquet súborov a dotazy nad nimi
 api/schemas.py        tvar JSON odpovedí (Pydantic modely)
 api/main.py           FastAPI endpointy
 frontend/             React (Vite + TypeScript): mapa sčítačov a detail dňa
+deploy/               nasadenie na VPS: postup, systemd služba, nginx
 ```
 
 ## Frontend
@@ -130,7 +133,13 @@ npm run dev
 
 Otvorte http://localhost:5173. Mapa (`/`) ukazuje všetky sčítače. Po kliknutí na sčítač
 sa otvorí detail (`/sensor/{sensor_id}?date=YYYY-MM-DD`) s hodinovým grafom za vybraný deň.
-Adresa API je v `frontend/src/config.json`.
+Adresa API je v `frontend/src/config.json` (`localUrl` pri vývoji, `serverUrl` v produkcii).
+
+## Nasadenie
+
+Frontend aj API bežia na jednom VPS za nginx na https://chodci.oresky.sk: nginx servíruje
+zbuildovaný React a požiadavky na `/api` posiela na uvicorn (služba systemd).
+Postup a konfiguračné súbory sú v [`deploy/`](deploy/README.md).
 
 ## Ďalšie kroky
 
