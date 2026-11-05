@@ -10,6 +10,7 @@ import datetime as dt
 from typing import Annotated
 
 from fastapi import Depends, FastAPI, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
 
 from api.data import LOCAL_TZ, FootfallData, get_data, hours_of_day
 from api.schemas import DayCounts, Sensor, SensorSummary
@@ -18,6 +19,13 @@ app = FastAPI(
     title="Bratislava footfall API",
     description="Hourly pedestrian counts from Bratislava counters. "
     "Source: Hlavné mesto SR Bratislava, CC BY 4.0.",
+)
+
+# Lets the React dev server (localhost / 127.0.0.1, any port) call the API from the browser.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origin_regex=r"http://(localhost|127\.0\.0\.1):\d+",
+    allow_methods=["GET"],
 )
 
 Data = Annotated[FootfallData, Depends(get_data)]

@@ -113,7 +113,22 @@ pipeline/build.py     orchestrácia E => T => L, vstupný bod pipeline
 api/data.py           načítanie parquet súborov a dotazy nad nimi
 api/schemas.py        tvar JSON odpovedí (Pydantic modely)
 api/main.py           FastAPI endpointy
+frontend/             React (Vite + TypeScript): mapa sčítačov a detail dňa
 ```
+
+## Frontend
+
+React aplikácia nad API (najprv spustite API, viď vyššie):
+
+```
+cd frontend
+npm install
+npm run dev
+```
+
+Otvorte http://localhost:5173. Mapa (`/`) ukazuje všetky sčítače. Po kliknutí na sčítač
+sa otvorí detail (`/sensor/{sensor_id}?date=YYYY-MM-DD`) s hodinovým grafom za vybraný deň.
+Adresa API je v `frontend/src/config.json`.
 
 ## Ďalšie kroky
 
