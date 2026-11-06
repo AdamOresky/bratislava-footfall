@@ -159,6 +159,10 @@ body {
     .map-legend__detail {
         display: none;
     }
+
+    .sensor-list:not([hidden]) ~ .map-area .map-legend {
+        display: none;
+    }
 }
 
 .map-legend {
