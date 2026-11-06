@@ -59,7 +59,8 @@ const MonthlyStatsComponent = ({ sensorId }: MonthlyStatsProps) => {
             </p>
 
             <ResponsiveContainer width="100%" height={320}>
-                <BarChart data={rows} barCategoryGap={2}>
+                {/* Right margin: room for the last month label, otherwise cut off on a phone */}
+                <BarChart data={rows} barCategoryGap={2} margin={{ top: 5, right: 16, bottom: 5, left: 5 }}>
                     <CartesianGrid vertical={false} stroke="#e4e4e7" />
                     <XAxis dataKey="label" tick={{ fontSize: 12 }} minTickGap={16} />
                     <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />

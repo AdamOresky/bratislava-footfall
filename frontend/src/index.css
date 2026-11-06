@@ -146,7 +146,7 @@ body {
     }
 
     .map-area {
-        min-height: 60vh;
+        min-height: 14rem;
     }
 
     /* Compact legend: just the three rows */
@@ -308,6 +308,40 @@ body {
     border-radius: 3px;
 }
 
+/* App name in the navbar: shrinks with "…" on narrow phones instead of pushing the button down */
+.app-brand {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Day totals */
+.total-card__value {
+    font-size: calc(1.3rem + 0.6vw);   /* same as Bootstrap .fs-3 */
+}
+
+/* Phone: three small cards in one row */
+@media (max-width: 575.98px) {
+    .app-brand {
+        font-size: 1.1rem;
+    }
+
+    .total-card .card-body {
+        padding: 0.5rem 0.6rem;
+    }
+
+    .total-card__label {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .total-card__value {
+        font-size: 1.15rem;
+    }
+}
+
 .week-legend {
     display: flex;
     align-items: center;
@@ -321,6 +355,7 @@ body {
 
 .week-legend span:last-child {
     margin-left: 0.25rem;
+    white-space: nowrap;
 }
 
 .week-legend__step {

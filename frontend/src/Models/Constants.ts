@@ -1,5 +1,5 @@
 export class Constants {
-    public static readonly appName = "Bratislava footfall";
+    public static readonly appName = "Pohyb chodcov v Bratislave";
     public static readonly timeZone = "Europe/Bratislava";
     public static readonly locale = "sk-SK";
 

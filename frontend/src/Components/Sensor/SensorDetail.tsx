@@ -107,10 +107,11 @@ const SensorDetailComponent = () => {
                         </Alert>
                     )}
 
-                    <Row className="mb-4 g-3">
-                        <Col sm={4}><TotalCard label={`→ ${sensor.dir_to}`} value={dayCounts.counts_total.count_to} /></Col>
-                        <Col sm={4}><TotalCard label={`→ ${dirFrom}`} value={dayCounts.counts_total.count_from} /></Col>
-                        <Col sm={4}><TotalCard label="Spolu" value={dayCounts.counts_total.count} /></Col>
+                    {/* Three in a row also on a phone (compact cards, see .total-card) */}
+                    <Row className="mb-4 g-2 g-sm-3">
+                        <Col xs={4}><TotalCard label={`→ ${sensor.dir_to}`} value={dayCounts.counts_total.count_to} /></Col>
+                        <Col xs={4}><TotalCard label={`→ ${dirFrom}`} value={dayCounts.counts_total.count_from} /></Col>
+                        <Col xs={4}><TotalCard label="Spolu" value={dayCounts.counts_total.count} /></Col>
                     </Row>
 
                     <HourlyChartComponent
@@ -143,9 +144,9 @@ const SensorDetailComponent = () => {
 };
 
 const TotalCard = ({ label, value }: { label: string, value: number }) => (
-    <Card body>
-        <div className="text-secondary small">{label}</div>
-        <div className="fs-3 fw-semibold">{Utils.formatNumber(value)}</div>
+    <Card body className="total-card h-100">
+        <div className="text-secondary small total-card__label">{label}</div>
+        <div className="fw-semibold total-card__value">{Utils.formatNumber(value)}</div>
     </Card>
 );
 

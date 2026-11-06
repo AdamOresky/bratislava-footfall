@@ -11,9 +11,8 @@ const NavigationComponent = () => {
     return (
         <Navbar bg="dark" data-bs-theme="dark">
             <Container fluid>
-                <Navbar.Brand as={Link} to="/">{Constants.appName}</Navbar.Brand>
-                <div className="d-flex align-items-center gap-3">
-                    <Navbar.Text className="d-none d-lg-block">Pohyb chodcov zo sčítačov v Bratislave</Navbar.Text>
+                <Navbar.Brand as={Link} to="/" className="app-brand">{Constants.appName}</Navbar.Brand>
+                <div className="d-flex align-items-center gap-3 flex-shrink-0">
                     {/* The sensor list belongs to the map page only */}
                     {isMapPage && (
                         <Button
@@ -22,7 +21,7 @@ const NavigationComponent = () => {
                             onClick={() => setIsListOpen(!isListOpen)}
                             aria-expanded={isListOpen}
                         >
-                            ☰ Zoznam sčítačov
+                            ☰ <span className="d-none d-sm-inline">Zoznam sčítačov</span>
                         </Button>
                     )}
                 </div>
