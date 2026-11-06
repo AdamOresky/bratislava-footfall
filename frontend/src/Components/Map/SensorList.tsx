@@ -55,6 +55,8 @@ const SensorListComponent = ({ sensors, onFocusChange }: SensorListProps) => {
                 <div className="sensor-list__count">
                     {visible.length === sensors.length ? `${sensors.length} sčítačov` : `${visible.length} z ${sensors.length}`}
                 </div>
+                {/* In the sticky header, so the meaning of the numbers stays visible while scrolling */}
+                <div className="sensor-list__count">Číslo = priemerný počet chodcov za deň, posledných 12 mesiacov</div>
             </div>
 
             {visible.map(s => (
@@ -86,8 +88,7 @@ const SensorListComponent = ({ sensors, onFocusChange }: SensorListProps) => {
                 </Link>
             ))}
 
-            {visible.length === 0 ? <div className="text-secondary small px-1">Žiadny sčítač s týmto názvom.</div> :
-            <div className="sensor-list__note">Číslo = priemerný počet chodcov za deň, posledných 12 mesiacov</div>}
+            {visible.length === 0 && <div className="text-secondary small px-1">Žiadny sčítač s týmto názvom.</div>}
         </>
     );
 };

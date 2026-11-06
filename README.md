@@ -147,7 +147,7 @@ Postup a konfiguračné súbory sú v [`deploy/`](deploy/README.md).
 Dáta sa zatiaľ načítavajú z CSV. Pripravené je rozšírenie na priame sťahovanie
 cez ArcGIS REST API.
 
-## Autor
+## Autor a licencia
 
-Adam Oreský. Dáta poskytuje Hlavné mesto SR Bratislava
+Adam Oreský. Kód je pod licenciou MIT, viď [`LICENSE`](LICENSE). Dáta poskytuje Hlavné mesto SR Bratislava
 pod licenciou [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), viď [Dáta](#dáta).
