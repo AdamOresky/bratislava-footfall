@@ -2,6 +2,7 @@ import { useState, type ReactElement } from 'react';
 import { Route, Routes, Outlet } from 'react-router-dom';
 
 import NavigationComponent from './Components/Navigation';
+import FooterComponent from './Components/Footer';
 import SensorMapComponent from './Components/Map/SensorMap';
 import SensorDetailComponent from './Components/Sensor/SensorDetail';
 import NotFoundComponent from './Components/ErrorPages/NotFound';
@@ -11,6 +12,7 @@ const MainLayout = () => (
     <div className="main-layout">
         <NavigationComponent/>
         <Outlet/>
+        <FooterComponent/>
     </div>
 );
 

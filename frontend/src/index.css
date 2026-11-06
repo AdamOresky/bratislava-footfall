@@ -390,3 +390,23 @@ body {
 [hidden] {
     display: none !important;
 }
+
+/* Credit line at the bottom of every page: author + data source and licence (CC BY 4.0 requires it) */
+.app-footer {
+    flex: none;
+    margin-top: auto;   /* short pages: stays at the bottom of the screen */
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.25rem 1rem;
+    padding: 0.4rem 0.75rem;
+    font-size: 0.75rem;
+    color: #71717a;
+    background: #ffffff;
+    border-top: 1px solid #e4e4e7;
+    text-align: center;
+}
+
+.app-footer a {
+    color: inherit;
+}

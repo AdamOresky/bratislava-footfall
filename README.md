@@ -134,6 +134,7 @@ npm run dev
 Otvorte http://localhost:5173. Mapa (`/`) ukazuje všetky sčítače. Po kliknutí na sčítač
 sa otvorí detail (`/sensor/{sensor_id}?date=YYYY-MM-DD`) s hodinovým grafom za vybraný deň.
 Adresa API je v `frontend/src/config.json` (`localUrl` pri vývoji, `serverUrl` v produkcii).
+Pätička na každej stránke uvádza autora a zdroj dát s licenciou (CC BY 4.0), texty a odkazy sú v `frontend/src/Models/Constants.ts`.
 
 ## Nasadenie
 
@@ -145,3 +146,8 @@ Postup a konfiguračné súbory sú v [`deploy/`](deploy/README.md).
 
 Dáta sa zatiaľ načítavajú z CSV. Pripravené je rozšírenie na priame sťahovanie
 cez ArcGIS REST API.
+
+## Autor
+
+Adam Oreský. Dáta poskytuje Hlavné mesto SR Bratislava
+pod licenciou [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), viď [Dáta](#dáta).
