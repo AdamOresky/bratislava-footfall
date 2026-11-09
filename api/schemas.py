@@ -8,6 +8,14 @@ import datetime as dt
 from pydantic import BaseModel, Field
 
 
+class Status(BaseModel):
+    """What data the API currently serves."""
+
+    data_until: dt.datetime = Field(description="Newest hour in the data, over all sensors")
+    sensors: int
+    hourly_records: int
+
+
 class SensorSummary(BaseModel):
     """Short form for the sensor list (map markers)."""
 

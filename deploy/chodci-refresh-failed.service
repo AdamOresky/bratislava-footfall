@@ -1,0 +1,11 @@
+# Started by systemd when chodci-refresh.service fails (OnFailure=).
+# On the server: /etc/systemd/system/chodci-refresh-failed.service
+# Sends a /fail ping to healthchecks.io with the end of the refresh log, so the e-mail says what went wrong.
+[Unit]
+Description=Report a failed chodci data refresh
+
+[Service]
+Type=oneshot
+EnvironmentFile=-/etc/chodci/healthchecks.env
+# $$ = a literal $ for the shell (systemd would expand a single $ itself).
+ExecStart=/bin/sh -c 'journalctl -u chodci-refresh -n 40 --no-pager | /usr/bin/curl -fsS -m 10 --retry 3 -o /dev/null --data-binary @- "$${HC_URL}/fail"'

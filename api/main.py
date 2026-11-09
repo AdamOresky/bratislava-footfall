@@ -13,7 +13,7 @@ from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 
 from api.data import LOCAL_TZ, FootfallData, get_data, hours_of_day
-from api.schemas import DayCounts, Months, Sensor, SensorSummary, TypicalWeek
+from api.schemas import DayCounts, Months, Sensor, SensorSummary, Status, TypicalWeek
 
 app = FastAPI(
     title="Bratislava footfall API",
@@ -39,6 +39,16 @@ def require_sensor(sensor_id: int, data: FootfallData) -> dict:
     if sensor is None:
         raise HTTPException(status_code=404, detail=f"Sensor {sensor_id} not found")
     return sensor
+
+
+@app.get("/status", response_model=Status)
+def get_status(data: Data):
+    """What data the API serves. The data is refreshed daily at 03:00 Bratislava time."""
+    return {
+        "data_until": data.data_until,
+        "sensors": len(data.sensors()),
+        "hourly_records": data.hourly_records,
+    }
 
 
 @app.get("/sensors", response_model=list[SensorSummary])

@@ -50,6 +50,62 @@ certbot --nginx -d chodci.oresky.sk      # HTTPS, certifikát sa obnovuje sám
 
 Kontrola: https://chodci.oresky.sk/api/sensors a https://chodci.oresky.sk/api/docs.
 
+## Denná aktualizácia dát
+
+Systemd timer každý deň o 03:00 (bratislavského času) spustí `python -m pipeline.refresh`.
+Skript stiahne celý dataset z ArcGIS API do `data/processed/staging/` a skontroluje ho:
+
+- dáta nie sú prázdne a všetky počty patria k známym sčítačom,
+- hodinových záznamov nie je o viac ako 5 % menej ako v aktuálnych dátach,
+- najnovšia hodina nie je staršia ako v aktuálnych dátach,
+- nechýba žiadny sčítač z aktuálnych dát (ID sú v URL API).
+
+Až keď kontroly prejdú, nahradí oba `.parquet` súbory a systemd reštartuje `chodci-api`. Ak
+sťahovanie alebo kontrola zlyhá, ostanú pôvodné súbory, API sa nereštartuje a služba je v stave
+`failed`.
+
+| súbor | na serveri |
+|---|---|
+| [`chodci-refresh.service`](chodci-refresh.service) | `/etc/systemd/system/chodci-refresh.service` |
+| [`chodci-refresh.timer`](chodci-refresh.timer) | `/etc/systemd/system/chodci-refresh.timer` |
+
+Inštalácia (raz, ako root, po nahratí `pipeline/` so súborom `refresh.py`):
+
+```bash
+systemctl daemon-reload
+systemctl start chodci-refresh            # prvý beh hneď, trvá ~1 min
+journalctl -u chodci-refresh -n 30        # musí končiť "Replaced: ..."
+systemctl enable --now chodci-refresh.timer
+systemctl list-timers chodci-refresh      # kedy pobeží nabudúce
+```
+
+Kontrola: https://chodci.oresky.sk/api/status (`data_until` = najnovšia hodina v dátach).
+
+### E-mail pri chybe (healthchecks.io)
+
+Refresh posiela pingy na [healthchecks.io](https://healthchecks.io), ten
+posiela e-mail. Upozorní, keď refresh zlyhá (aj s koncom logu) aj keď ping vôbec nepríde
+(server nebeží, timer nebeží).
+
+| súbor | na serveri |
+|---|---|
+| [`chodci-refresh-failed.service`](chodci-refresh-failed.service) | `/etc/systemd/system/chodci-refresh-failed.service` |
+
+1. Na healthchecks.io vytvorte check: *Schedule* `Cron`, výraz `0 3 * * *`, časové pásmo
+   `Europe/Bratislava`, *Grace time* 30 minút. Skopírujte jeho ping URL.
+2. Na serveri ako root (URL nepatrí do repozitára):
+
+   ```bash
+   mkdir -p /etc/chodci
+   echo 'HC_URL=https://hc-ping.com/<uuid>' > /etc/chodci/healthchecks.env
+   chmod 600 /etc/chodci/healthchecks.env
+   systemctl daemon-reload
+   systemctl start chodci-refresh          # na healthchecks.io má byť check zelený
+   ```
+
+3. Test chyby: `systemctl start chodci-refresh-failed` pošle `/fail`, mal by prísť e-mail.
+   Potom `systemctl start chodci-refresh`, aby bol check znova zelený.
+
 ## Frontend
 
 ```
@@ -66,7 +122,7 @@ Cez SFTP zmažte obsah `/home/chodci/www/` a nahrajte doň obsah `frontend/dist/
 | zmena | SFTP | SSH (root) |
 |---|---|---|
 | kód API | prepíšte `api/`, `pipeline/` | `systemctl restart chodci-api` |
-| nové dáta (`python -m pipeline.build`) | prepíšte oba `.parquet` | `systemctl restart chodci-api` |
+| nové dáta | nič, aktualizujú sa samé každý deň | mimo plánu: `systemctl start chodci-refresh` |
 | `requirements.txt` | nahrajte ho | `/home/chodci/app/.venv/bin/pip install -r /home/chodci/app/requirements.txt`, potom restart |
 | frontend | zmažte `www/`, nahrajte nový `dist/` | nič |
 

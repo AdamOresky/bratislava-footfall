@@ -11,3 +11,5 @@ venv/
 # data/processed/*.parquet (~4 MB) IS committed: the API serves exactly these files.
 data/raw/*
 !data/raw/.gitkeep
+# pipeline.refresh builds new files here before replacing the current ones
+data/processed/staging/

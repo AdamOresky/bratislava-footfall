@@ -38,6 +38,8 @@ class FootfallData:
         )
         counts = counts.assign(timestamp=_to_local(counts["timestamp"]))
         counts = counts.assign(day=counts["timestamp"].dt.date)
+        self.data_until = counts["timestamp"].max()
+        self.hourly_records = len(counts)
 
         # Daily totals per sensor: base for the map intensity, typical week and months.
         self._daily = counts.groupby(["sensor_id", "day"])[SUM_FIELDS].sum().reset_index()

@@ -1,0 +1,13 @@
+# Starts chodci-refresh.service every day. On the server: /etc/systemd/system/chodci-refresh.timer
+# Next run: systemctl list-timers chodci-refresh
+[Unit]
+Description=Daily chodci data refresh
+
+[Timer]
+# 03:00 Bratislava time, whatever the server's time zone. Not at midnight: the city's data may arrive with a delay.
+OnCalendar=*-*-* 03:00:00 Europe/Bratislava
+# If the server was off at 03:00, run as soon as it is back on.
+Persistent=true
+
+[Install]
+WantedBy=timers.target

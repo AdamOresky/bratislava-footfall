@@ -6,6 +6,16 @@ export const FailureMessage = {
 
 // endregion
 
+// region Status
+
+export interface Status {
+    data_until: string,    // newest hour in the data, e.g. "2026-11-09T01:00:00+01:00"
+    sensors: number,
+    hourly_records: number,
+}
+
+// endregion
+
 // region Sensor
 
 export interface SensorSummary {

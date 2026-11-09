@@ -1,9 +1,13 @@
 import type { AxiosResponse } from "axios";
-import type { DayCounts, Months, Sensor, SensorSummary, TypicalWeek } from "../Models/Models";
+import type { DayCounts, Months, Sensor, SensorSummary, Status, TypicalWeek } from "../Models/Models";
 import axiosInstance from './BackendService';
 
 class HttpRepository {
     private static axiosInstance = axiosInstance;
+
+    static getStatus(): Promise<AxiosResponse<Status>> {
+        return HttpRepository.axiosInstance.get<Status>("/status");
+    }
 
     // region Sensor
 

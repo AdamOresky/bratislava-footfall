@@ -3,6 +3,8 @@
 **▶ Live demo: [chodci.oresky.sk](https://chodci.oresky.sk)** · API dokumentácia: [chodci.oresky.sk/api/docs](https://chodci.oresky.sk/api/docs)
 
 Analýza a vizualizácia hodinových dát o pohybe chodcov zo sčítačov v meste Bratislava.
+Živá verzia sa aktualizuje automaticky každý deň o 03:00 z otvorených dát mesta
+(ArcGIS API, s kontrolou dát pred nasadením a e-mailom pri chybe).
 
 ## Dáta
 
@@ -11,7 +13,9 @@ Analýza a vizualizácia hodinových dát o pohybe chodcov zo sčítačov v mest
 - **Licencia:** [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)
 - **Úpravy:** dáta sú v tomto projekte spracované (premenované stĺpce, očistené texty,
   rozdelenie na tabuľky), viď [ETL pipeline](#etl-pipeline)
-- **Stiahnuté:** 05.11.2026
+- **Aktualizácia:** živá verzia sťahuje dáta z API každý deň o 03:00
+  (viď [nasadenie](deploy/README.md#denná-aktualizácia-dát)). `data/processed/*.parquet`
+  v repozitári obsahujú dáta do 09.11.2026 00:00.
 
 Dáta sa dajú získať dvoma spôsobmi, obsah je rovnaký:
 
@@ -70,6 +74,10 @@ používajú sa ako kľúče a v URL API.
 3. **Load** (`pipeline/build.py`): zápis do parquet súborov
 
 Časy sa ukladajú v UTC.
+
+Na serveri beží denne `python -m pipeline.refresh`: rovnaký build z API, ale do dočasného
+priečinka, a aktuálne súbory nahradí až po kontrolách (počet riadkov, najnovšia hodina,
+zoznam sčítačov). Pri chybe ostanú pôvodné dáta.
 
 ### Kvalita zdrojových dát
 

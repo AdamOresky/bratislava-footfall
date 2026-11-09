@@ -1,0 +1,30 @@
+# Daily data refresh, started by chodci-refresh.timer. On the server: /etc/systemd/system/chodci-refresh.service
+# Run by hand: systemctl start chodci-refresh   Logs: journalctl -u chodci-refresh
+#
+# Monitoring (healthchecks.io): /start when it begins, a plain ping when everything worked,
+# /fail (from chodci-refresh-failed.service) when any step failed. No ping by the deadline
+# (server off, timer not running) also sends an e-mail. The ping URL is not in the repository:
+# /etc/chodci/healthchecks.env contains HC_URL=https://hc-ping.com/<uuid>
+# Without that file the pings fail and are ignored ("-" prefix), the refresh itself still runs.
+[Unit]
+Description=Chodci data refresh (ArcGIS API -> parquet)
+After=network-online.target
+Wants=network-online.target
+OnFailure=chodci-refresh-failed.service
+
+[Service]
+Type=oneshot
+User=chodci
+WorkingDirectory=/home/chodci/app
+EnvironmentFile=-/etc/chodci/healthchecks.env
+# Unbuffered output, so the log lines reach the journal as they are printed.
+Environment=PYTHONUNBUFFERED=1
+ExecStartPre=-/usr/bin/curl -fsS -m 10 --retry 3 -o /dev/null ${HC_URL}/start
+ExecStart=/home/chodci/app/.venv/bin/python -m pipeline.refresh
+# The ExecStartPost lines run only if the refresh succeeded (exit code 0), in this order.
+# "+" runs it as root, which restarting a service needs.
+ExecStartPost=+/usr/bin/systemctl restart chodci-api
+# The API loads the data at start: check it really came up with the new files (retries ~30 s).
+ExecStartPost=/usr/bin/curl -fsS -m 10 --retry 10 --retry-delay 3 --retry-connrefused -o /dev/null http://127.0.0.1:8000/status
+ExecStartPost=-/usr/bin/curl -fsS -m 10 --retry 3 -o /dev/null ${HC_URL}
+TimeoutStartSec=30min
