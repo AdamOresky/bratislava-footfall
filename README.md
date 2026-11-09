@@ -13,9 +13,17 @@ Analýza a vizualizácia hodinových dát o pohybe chodcov zo sčítačov v mest
   rozdelenie na tabuľky), viď [ETL pipeline](#etl-pipeline)
 - **Stiahnuté:** 05.11.2026
 
-CSV má ~87 MB, preto nie je v repozitári. Stiahnite ho zo stránky datasetu
-(pôvodný názov `Počet_prechádzajúcich_chodcov_podľa_sčítačov_za_hodinu.csv`)
-a uložte ako `data/raw/footfall.csv`.
+Dáta sa dajú získať dvoma spôsobmi, obsah je rovnaký:
+
+- **ArcGIS API** (odporúčané): `python -m pipeline.build --api` stiahne aktuálne dáta
+  priamo z [FeatureServera](https://services8.arcgis.com/pRlN1m0su5BYaFAS/arcgis/rest/services/chodci10_01/FeatureServer/0)
+  datasetu, za ~1 minútu.
+- **CSV**: stiahnite ho zo stránky datasetu (pôvodný názov
+  `Počet_prechádzajúcich_chodcov_podľa_sčítačov_za_hodinu.csv`) a uložte ako
+  `data/raw/footfall.csv`. Má ~87 MB, preto nie je v repozitári.
+
+CSV zo stránky datasetu môže byť staršie ako dáta v API: súbor stiahnutý 05.11.2026
+končil 10.07.2026, API v rovnaký deň vracalo dáta do 05.11.2026.
 
 ## Spustenie
 
@@ -39,8 +47,9 @@ python -m pipeline.build
 
 ## ETL pipeline
 
-`python -m pipeline.build` spracuje `data/raw/footfall.csv` (~87 MB)
-a vytvorí v `data/processed/`:
+`python -m pipeline.build` spracuje `data/raw/footfall.csv` (~87 MB),
+`python -m pipeline.build --api` namiesto toho stiahne dáta z ArcGIS API.
+Oba vytvoria v `data/processed/`:
 
 | súbor | obsah |
 |---|---|
@@ -52,7 +61,10 @@ sčítača („#11 - Most Apollo“ => 11). Staršie sčítače bez čísla maj�
 ID 101–104 (`LEGACY_SENSOR_IDS` v `pipeline/transform.py`). ID sa nesmú meniť,
 používajú sa ako kľúče a v URL API.
 
-1. **Extract** (`pipeline/source.py`): načítanie CSV a premenovanie stĺpcov
+1. **Extract** (`pipeline/source.py`): načítanie CSV (`load_raw()`) alebo stiahnutie
+   z API (`fetch_from_api()`) a premenovanie stĺpcov. Obe funkcie vracajú rovnaký
+   DataFrame, ďalšie kroky nevedia, odkiaľ dáta prišli. API sa stránkuje po 32 000
+   riadkoch podľa `ObjectId` a výsledok sa overuje proti počtu riadkov na serveri.
 2. **Transform** (`pipeline/transform.py`): čistenie textov, chýbajúce názvy smerov,
    rozdelenie na sčítače a počty
 3. **Load** (`pipeline/build.py`): zápis do parquet súborov
@@ -138,14 +150,13 @@ Pätička na každej stránke uvádza autora a zdroj dát s licenciou (CC BY 4.0
 
 ## Nasadenie
 
-Frontend aj API bežia na jednom VPS za nginx na https://chodci.oresky.sk: nginx servíruje
+Frontend aj API bežia na jednom VPS za nginx na https://chodci.oresky.sk: nginx servuje
 zbuildovaný React a požiadavky na `/api` posiela na uvicorn (služba systemd).
 Postup a konfiguračné súbory sú v [`deploy/`](deploy/README.md).
 
 ## Ďalšie kroky
 
-Dáta sa zatiaľ načítavajú z CSV. Pripravené je rozšírenie na priame sťahovanie
-cez ArcGIS REST API.
+Pravidelná aktualizácia dát.
 
 ## Autor a licencia
 
