@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Alert, Card, Col, Container, Row, Spinner, Tab, Tabs } from 'react-bootstrap';
-import { Link, useParams, useSearchParams } from 'react-router-dom';
-import { FailureMessage, type DayCounts, type Sensor } from '../../Models/Models';
+import { Link, useLocation, useParams, useSearchParams } from 'react-router-dom';
+import { FailureMessage, type DayCounts, type Sensor, type SensorSummary } from '../../Models/Models';
 import { SensorService } from '../../Services/SensorService';
 import { Utils } from '../../Services/Utils';
 import HourlyChartComponent from './HourlyChart';
@@ -12,11 +12,13 @@ import MonthlyStatsComponent from './MonthlyStats';
 const SensorDetailComponent = () => {
     const { sensorId } = useParams();
     const [searchParams, setSearchParams] = useSearchParams();
-    const { getSensor, getDayCounts } = SensorService();
+    const { getSensor, getSensors, getDayCounts } = SensorService();
+    const location = useLocation();
 
     const [sensor, setSensor] = useState<Sensor | null>(null);
     const [dayCounts, setDayCounts] = useState<DayCounts | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [allSensors, setAllSensors] = useState<SensorSummary[]>([]);
 
     const id = Number(sensorId);
     const date = searchParams.get("date");
@@ -30,9 +32,18 @@ const SensorDetailComponent = () => {
         }, { replace });
     };
 
+    useEffect(() => {
+        getSensors().then(result => {
+            if (result !== null) {
+                setAllSensors([...result].sort((a, b) => a.sensor_id - b.sensor_id));
+            }
+        });
+    }, []);
+
     // Sensor info; without ?date= show the day before the last one
     // (the last day is usually incomplete, the export ends in the middle of it)
     useEffect(() => {
+        setSensor(null);
         getSensor(id).then(result => {
             if (result === null) {
                 setError(FailureMessage.dataNotLoaded);
@@ -76,6 +87,11 @@ const SensorDetailComponent = () => {
     }
 
     const dirFrom = sensor.dir_from || "druhý smer";
+
+    const index = allSensors.findIndex(s => s.sensor_id === id);
+    const showSwitch = index !== -1 && allSensors.length > 1;
+    const previous = allSensors.at(index - 1);
+    const next = allSensors.at((index + 1) % allSensors.length);
 
     const dayView = (
         <>
@@ -127,7 +143,20 @@ const SensorDetailComponent = () => {
 
     return (
         <Container className="py-4">
-            <Link to="/">← Späť na mapu</Link>
+            <div className="sensor-nav">
+                <Link to="/">← Späť na mapu</Link>
+                {showSwitch && previous && next && (
+                    <div className="sensor-nav__switch">
+                        <Link to={`/sensor/${previous.sensor_id}${location.search}`} className="btn btn-sm btn-outline-secondary" title={previous.name}>
+                            ← <span className="sensor-nav__name">{previous.name}</span>
+                        </Link>
+                        <span className="small text-secondary">{index + 1} / {allSensors.length}</span>
+                        <Link to={`/sensor/${next.sensor_id}${location.search}`} className="btn btn-sm btn-outline-secondary" title={next.name}>
+                            <span className="sensor-nav__name">{next.name}</span> →
+                        </Link>
+                    </div>
+                )}
+            </div>
             <h1 className="h3 mt-3 mb-1">{sensor.name}</h1>
             <p className="text-secondary">
                 Dáta od {Utils.formatDate(sensor.first_seen)} do {Utils.formatDate(sensor.last_seen)}
