@@ -29,6 +29,16 @@ export class Utils {
         return dayBefore < firstDay ? firstDay : dayBefore;
     }
 
+    /**
+     * Last day fully covered by data, given its newest hour (start of the hour, as `data_until`).
+     * "2026-11-09T00:00:00+01:00" -> "2026-11-08" (only the 00:00 hour of the 9th is there),
+     * "2026-11-08T23:00:00+01:00" -> "2026-11-08" (the 23:00 hour completes the 8th).
+     */
+    public static lastFullDay(newestHour: string): string {
+        const hourEnd = new Date(new Date(newestHour).getTime() + 60 * 60 * 1000).toISOString();
+        return format(subDays(parseISO(Utils.toLocalDate(hourEnd)), 1), 'yyyy-MM-dd');
+    }
+
     /** "2026-07-10T01:00:00+02:00" -> "10. 7. 2026" */
     public static formatDate(timestamp: string): string {
         return new Date(timestamp).toLocaleDateString(Constants.locale, { timeZone: Constants.timeZone });

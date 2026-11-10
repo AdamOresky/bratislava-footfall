@@ -26,7 +26,7 @@ const FooterComponent = () => {
                 {lastUpdateAt && (
                     <>
                         {', '}
-                        <span className="text-nowrap">dáta aktualizované {Utils.formatDate(lastUpdateAt)}</span>
+                        <span className="text-nowrap">dáta do {Utils.formatDate(Utils.lastFullDay(lastUpdateAt))}</span>
                     </>
                 )}
             </span>
