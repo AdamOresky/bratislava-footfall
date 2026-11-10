@@ -416,3 +416,32 @@ body {
         padding: 0.4rem 0.25rem;
     }
 }
+
+.sensor-nav {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+.sensor-nav__switch {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.sensor-nav__name {
+    display: inline-block;
+    max-width: 10rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: bottom;
+}
+
+@media (max-width: 575.98px) {
+    .sensor-nav__name {
+        display: none;
+    }
+}
