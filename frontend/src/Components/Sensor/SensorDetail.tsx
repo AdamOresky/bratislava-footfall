@@ -136,7 +136,7 @@ const SensorDetailComponent = () => {
             {/* mountOnEnter: a tab loads its data only when opened */}
             <Tabs activeKey={view} onSelect={key => key && setParam("view", key)} className="mb-4" mountOnEnter>
                 <Tab eventKey="day" title="Deň">{dayView}</Tab>
-                <Tab eventKey="week" title="Typický týždeň"><TypicalWeekComponent sensorId={id} /></Tab>
+                <Tab eventKey="week" title="Typický týždeň"><TypicalWeekComponent sensorId={id} dirTo={sensor.dir_to} dirFrom={dirFrom} /></Tab>
                 <Tab eventKey="months" title="Mesiace"><MonthlyStatsComponent sensorId={id} /></Tab>
             </Tabs>
         </Container>

@@ -339,6 +339,12 @@ body {
     }
 }
 
+/* Direction switch above the typical week: small pills */
+.week-directions .nav-link {
+    padding: 0.25rem 0.75rem;
+    font-size: 0.875rem;
+}
+
 .week-legend {
     display: flex;
     align-items: center;
