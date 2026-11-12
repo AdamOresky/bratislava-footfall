@@ -1,0 +1,15 @@
+# systemd service for the test API. On the server: /etc/systemd/system/chodci-api-test.service
+# Same as chodci-api.service, but from /home/chodci/app-test on port 8001.
+# The data is shared with prod: app-test/data/processed is a symlink to app/data/processed.
+[Unit]
+Description=Chodci API (test)
+After=network.target
+
+[Service]
+User=chodci
+WorkingDirectory=/home/chodci/app-test
+ExecStart=/home/chodci/app-test/.venv/bin/uvicorn api.main:app --host 127.0.0.1 --port 8001 --root-path /api
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

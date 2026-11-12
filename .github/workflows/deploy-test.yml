@@ -1,0 +1,22 @@
+# Every push to main: CI, then deploy to https://test.chodci.oresky.sk
+name: Deploy test
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  deploy:
+    needs: ci
+    uses: ./.github/workflows/deploy.yml
+    secrets: inherit
+    with:
+      environment: test
+      url: https://test.chodci.oresky.sk
+      app_dir: app-test
+      www_dir: www-test
+      service: chodci-api-test
+      port: "8001"

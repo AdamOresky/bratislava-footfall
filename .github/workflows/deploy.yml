@@ -1,0 +1,94 @@
+# Uploads one commit to one environment on the VPS. Not run on its own:
+# deploy-test.yml and deploy-prod.yml call it after CI, with the values of their environment.
+#
+# Secrets (repository level, Settings -> Secrets and variables -> Actions):
+#   DEPLOY_HOST         IP address of the VPS
+#   DEPLOY_SSH_KEY      private key whose public half is in /home/chodci/.ssh/authorized_keys
+#   DEPLOY_KNOWN_HOSTS  output of `ssh-keyscan -t ed25519 <IP>`, so the runner trusts only this server
+name: Deploy
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: GitHub environment (test / prod)
+        type: string
+        required: true
+      url:
+        type: string
+        required: true
+      app_dir:
+        description: API directory, relative to /home/chodci
+        type: string
+        required: true
+      www_dir:
+        description: frontend directory, relative to /home/chodci
+        type: string
+        required: true
+      service:
+        description: systemd service of the API
+        type: string
+        required: true
+      port:
+        description: port uvicorn listens on
+        type: string
+        required: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+    environment:
+      name: ${{ inputs.environment }}
+      url: ${{ inputs.url }}
+    # Never two deploys to the same environment at once; a waiting one is not cancelled.
+    concurrency:
+      group: deploy-${{ inputs.environment }}
+      cancel-in-progress: false
+    env:
+      REMOTE: chodci@${{ secrets.DEPLOY_HOST }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/download-artifact@v6
+        with:
+          name: frontend-dist
+          path: dist
+
+      - name: SSH key
+        env:
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519 && chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+
+      # Only code is uploaded. data/ is left alone: the daily refresh keeps newer parquet
+      # files there than the ones committed, and .venv/ is created on the server.
+      - name: Upload API
+        run: |
+          rsync -az --delete --exclude=__pycache__ api/ "$REMOTE:${{ inputs.app_dir }}/api/"
+          rsync -az --delete --exclude=__pycache__ pipeline/ "$REMOTE:${{ inputs.app_dir }}/pipeline/"
+          rsync -az requirements.txt "$REMOTE:${{ inputs.app_dir }}/"
+
+      - name: Install requirements and restart API
+        run: |
+          ssh "$REMOTE" bash -s -- "${{ inputs.app_dir }}" "${{ inputs.service }}" "${{ inputs.port }}" <<'EOF'
+          set -euo pipefail
+          cd "$1"
+          [ -d .venv ] || python3 -m venv .venv
+          .venv/bin/pip install -q -r requirements.txt
+          # Allowed without a password by /etc/sudoers.d/chodci-deploy
+          sudo -n /usr/bin/systemctl restart "$2"
+          # The API loads the data at start: wait until it answers (~30 s).
+          curl -fsS -m 10 --retry 10 --retry-delay 3 --retry-connrefused -o /dev/null "http://127.0.0.1:$3/status"
+          EOF
+
+      # After the API, so the new frontend never calls an old API.
+      - name: Upload frontend
+        run: rsync -az --delete dist/ "$REMOTE:${{ inputs.www_dir }}/"
+
+      - name: Check public URL
+        run: |
+          curl -fsS -m 10 --retry 3 -o /dev/null "${{ inputs.url }}/"
+          curl -fsS -m 10 --retry 3 "${{ inputs.url }}/api/status"

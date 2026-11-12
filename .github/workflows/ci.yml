@@ -1,0 +1,60 @@
+# Checks for every pull request. deploy-test.yml and deploy-prod.yml call it too (workflow_call),
+# so nothing is deployed unless these jobs pass. The built frontend is kept as the "frontend-dist"
+# artifact, which deploy.yml uploads to the server.
+name: CI
+
+on:
+  pull_request:
+  workflow_call:
+
+jobs:
+  frontend:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+      - uses: actions/upload-artifact@v5
+        with:
+          name: frontend-dist
+          path: frontend/dist/
+          retention-days: 7
+
+  api:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          # Same Python as the server (Ubuntu 24.04)
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      # Smoke test: the API starts with the committed parquet files and answers.
+      - name: Smoke test
+        run: |
+          python - <<'EOF'
+          from fastapi.testclient import TestClient
+          from api.main import app
+
+          client = TestClient(app)
+          for path in ["/status", "/sensors"]:
+              response = client.get(path)
+              response.raise_for_status()
+              print(path, response.status_code)
+
+          sensor_id = client.get("/sensors").json()[0]["sensor_id"]
+          for path in [f"/sensors/{sensor_id}", f"/sensors/{sensor_id}/typical-week", f"/sensors/{sensor_id}/months"]:
+              response = client.get(path)
+              response.raise_for_status()
+              print(path, response.status_code)
+          EOF

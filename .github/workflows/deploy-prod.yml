@@ -1,0 +1,23 @@
+# Started by hand: Actions -> Deploy prod -> Run workflow (branch main).
+# Deploys the latest commit of main, the one already running on test, to https://chodci.oresky.sk
+# The "prod" environment accepts only the main branch (Settings -> Environments -> prod).
+name: Deploy prod
+
+on:
+  workflow_dispatch:
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  deploy:
+    needs: ci
+    uses: ./.github/workflows/deploy.yml
+    secrets: inherit
+    with:
+      environment: prod
+      url: https://chodci.oresky.sk
+      app_dir: app
+      www_dir: www
+      service: chodci-api
+      port: "8000"

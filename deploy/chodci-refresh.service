@@ -26,5 +26,7 @@ ExecStart=/home/chodci/app/.venv/bin/python -m pipeline.refresh
 ExecStartPost=+/usr/bin/systemctl restart chodci-api
 # The API loads the data at start: check it really came up with the new files (retries ~30 s).
 ExecStartPost=/usr/bin/curl -fsS -m 10 --retry 10 --retry-delay 3 --retry-connrefused -o /dev/null http://127.0.0.1:8000/status
+# The test API reads the same files (symlink). "-": a failing test API does not fail the refresh.
+ExecStartPost=-+/usr/bin/systemctl restart chodci-api-test
 ExecStartPost=-/usr/bin/curl -fsS -m 10 --retry 3 -o /dev/null ${HC_URL}
 TimeoutStartSec=30min

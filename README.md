@@ -138,7 +138,8 @@ api/data.py           načítanie parquet súborov a dotazy nad nimi
 api/schemas.py        tvar JSON odpovedí (Pydantic modely)
 api/main.py           FastAPI endpointy
 frontend/             React (Vite + TypeScript): mapa sčítačov a detail dňa
-deploy/               nasadenie na VPS: postup, systemd služba, nginx
+deploy/               nasadenie na VPS: postup, systemd služby, nginx
+.github/workflows/    CI a nasadenie (test pri pushe do main, prod ručne)
 ```
 
 ## Frontend
@@ -160,7 +161,9 @@ Pätička na každej stránke uvádza autora a zdroj dát s licenciou (CC BY 4.0
 
 Frontend aj API bežia na jednom VPS za nginx na https://chodci.oresky.sk: nginx servuje
 zbuildovaný React a požiadavky na `/api` posiela na uvicorn (služba systemd).
-Postup a konfiguračné súbory sú v [`deploy/`](deploy/README.md).
+Nasadzuje GitHub Actions: každý push do `main` prejde kontrolami (lint, build, smoke test API)
+a nasadí sa na https://test.chodci.oresky.sk. Na produkciu ide ten istý commit ručným
+spustením workflow. Postup a konfiguračné súbory sú v [`deploy/`](deploy/README.md).
 
 ## Ďalšie kroky
 
