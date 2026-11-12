@@ -21,10 +21,10 @@ app = FastAPI(
     "Source: Hlavné mesto SR Bratislava, CC BY 4.0.",
 )
 
-# Browsers may call the API from the live site and from the React dev server (any local port).
+# Only the React dev server (any local port) calls the API from another origin.
+# On the server the frontend and the API share one address (nginx serves the API under /api), so no CORS there.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://chodci.oresky.sk"],
     allow_origin_regex=r"http://(localhost|127\.0\.0\.1):\d+",
     allow_methods=["GET"],
 )

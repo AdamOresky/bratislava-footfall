@@ -4,7 +4,8 @@
 # Secrets (repository level, Settings -> Secrets and variables -> Actions):
 #   DEPLOY_HOST         IP address of the VPS
 #   DEPLOY_SSH_KEY      private key whose public half is in /home/chodci/.ssh/authorized_keys
-#   DEPLOY_KNOWN_HOSTS  output of `ssh-keyscan -t ed25519 <IP>`, so the runner trusts only this server
+#   DEPLOY_KNOWN_HOSTS  "<IP> ssh-ed25519 AAAA...", the server's host key, so the runner trusts only
+#                       this server (how to get it: deploy/README.md, step 5)
 name: Deploy
 
 on:

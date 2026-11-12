@@ -1,14 +1,19 @@
 # Nasadenie na VPS
 
-Všetko beží na jednom VPS (Contabo, Ubuntu 24.04) na https://chodci.oresky.sk:
+Všetko beží na jednom VPS (Contabo, Ubuntu 24.04), produkcia na https://chodci.oresky.sk
+a test na https://test.chodci.oresky.sk:
 
 ```
-nginx  /        statický frontend z /home/chodci/www
-       /api/    proxy na uvicorn 127.0.0.1:8000 (služba systemd chodci-api)
+chodci.oresky.sk       /      statický frontend z /home/chodci/www
+                       /api/  proxy na uvicorn 127.0.0.1:8000 (služba systemd chodci-api)
+test.chodci.oresky.sk  /      statický frontend z /home/chodci/www-test
+                       /api/  proxy na uvicorn 127.0.0.1:8001 (služba systemd chodci-api-test)
 ```
 
-Frontend aj API sú na tej istej adrese, takže produkcia nepotrebuje CORS. Súbory sa na server
-nahrávajú cez SFTP (FileZilla, `sftp://<IP>`, používateľ `chodci`), príkazy sa spúšťajú cez SSH.
+Frontend aj API sú na tej istej adrese, takže nepotrebujú CORS. Kód (API, pipeline, frontend)
+nasadzuje GitHub Actions, viď [Nasadenie cez GitHub Actions](#nasadenie-cez-github-actions).
+Ručne cez SFTP (FileZilla, `sftp://<IP>`, používateľ `chodci`) sa nahráva len prvá inštalácia
+a konfiguračné súbory z tohto priečinka, príkazy sa spúšťajú cez SSH.
 
 | súbor | na serveri |
 |---|---|
@@ -29,7 +34,8 @@ chmod 755 /home/chodci            # nginx musí vedieť čítať ~/www
 ```
 
 Cez SFTP nahrajte do `/home/chodci/app/` priečinky `api/`, `pipeline/`, súbor `requirements.txt`
-a do `data/processed/` oba súbory `.parquet`. Potom ako `chodci`:
+a do `data/processed/` oba súbory `.parquet` (neskôr kód nahráva GitHub Actions, dáta refresh).
+Potom ako `chodci`:
 
 ```bash
 cd ~/app
@@ -60,7 +66,7 @@ Skript stiahne celý dataset z ArcGIS API do `data/processed/staging/` a skontro
 - najnovšia hodina nie je staršia ako v aktuálnych dátach,
 - nechýba žiadny sčítač z aktuálnych dát (ID sú v URL API).
 
-Až keď kontroly prejdú, nahradí oba `.parquet` súbory a systemd reštartuje `chodci-api`. Ak
+Až keď kontroly prejdú, nahradí oba `.parquet` súbory a systemd reštartuje `chodci-api` aj `chodci-api-test`. Ak
 sťahovanie alebo kontrola zlyhá, ostanú pôvodné súbory, API sa nereštartuje a služba je v stave
 `failed`.
 
@@ -210,7 +216,8 @@ https://test.chodci.oresky.sk a https://test.chodci.oresky.sk/api/status. Prvé 
 | nové dáta | nič, aktualizujú sa samé každý deň; mimo plánu `systemctl start chodci-refresh` |
 | súbory v `deploy/` (systemd, nginx) | ručne cez SFTP + SSH ako root, deploy ich nenahráva |
 
-API načíta dáta do pamäte pri štarte, preto je po zmene dát potrebný reštart.
+API načíta dáta do pamäte pri štarte, preto je po zmene dát potrebný reštart. Refresh ho robí
+sám, ručne len pri dátach nahratých inak: `systemctl restart chodci-api chodci-api-test`.
 
 Logy: `journalctl -u chodci-api -n 50` (API), `journalctl -u chodci-api-test -n 50` (test),
-`/var/log/nginx/error.log` (nginx).
+`journalctl -u chodci-refresh -n 50` (refresh), `/var/log/nginx/error.log` (nginx).

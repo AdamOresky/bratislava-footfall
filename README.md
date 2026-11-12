@@ -37,7 +37,7 @@ Windows (PowerShell):
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-python -m pipeline.build
+python -m pipeline.build --api
 ```
 
 Linux / macOS:
@@ -46,8 +46,12 @@ Linux / macOS:
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-python -m pipeline.build
+python -m pipeline.build --api
 ```
+
+Posledný krok stiahne aktuálne dáta z API. Nie je povinný: `data/processed/*.parquet`
+sú v repozitári, API a frontend bežia aj s nimi. S CSV v `data/raw/footfall.csv`
+stačí `python -m pipeline.build`.
 
 ## ETL pipeline
 
@@ -58,7 +62,7 @@ Oba vytvoria v `data/processed/`:
 | súbor | obsah |
 |---|---|
 | `sensors.parquet` | 23 riadkov: `sensor_id`, `name`, poloha, smery, obdobie dát (`first_seen`, `last_seen`, `hours`) |
-| `counts.parquet` | ~800 tis. riadkov: hodinové počty (`sensor_id`, `timestamp` v UTC, `count_to`, `count_from`, `count`) |
+| `counts.parquet` | ~860 tis. riadkov: hodinové počty (`sensor_id`, `timestamp` v UTC, `count_to`, `count_from`, `count`) |
 
 Tabuľky sú prepojené stĺpcom `sensor_id`. ID je číslo, ktoré mesto uvádza v názve
 sčítača („#11 - Most Apollo“ => 11). Staršie sčítače bez čísla majú pevne pridelené
@@ -96,7 +100,7 @@ zoznam sčítačov). Pri chybe ostanú pôvodné dáta.
 
 ## API
 
-FastAPI nad výstupmi pipeline (najprv spustite `python -m pipeline.build`):
+FastAPI nad výstupmi pipeline (`data/processed/*.parquet`, sú v repozitári):
 
 ```
 uvicorn api.main:app --reload
@@ -106,6 +110,7 @@ Interaktívna dokumentácia: http://127.0.0.1:8000/docs
 
 | endpoint | popis                                               |
 |---|-----------------------------------------------------|
+| `GET /status` | aké dáta API práve servuje: `data_until` (najnovšia hodina), počet sčítačov a hodinových záznamov |
 | `GET /sensors` | všetky sčítače: `sensor_id`, `name`, `lat`, `lon`, `avg_daily_count` (priemer chodcov za deň za posledných 365 dní, iba dni s meraním) |
 | `GET /sensors/{sensor_id}` | jeden sčítač so smermi a obdobím dát |
 | `GET /sensors/{sensor_id}/counts?date=2025-04-18` | hodinové počty za deň v bratislavskom časovom pásme |
@@ -134,10 +139,11 @@ data/processed/       výstupy pipeline (parquet, nahrávajú sa na server)
 pipeline/source.py    E: načítanie dát a zjednotenie stĺpcov
 pipeline/transform.py T: čisté funkcie DataFrame → DataFrame
 pipeline/build.py     orchestrácia E => T => L, vstupný bod pipeline
+pipeline/refresh.py   denná aktualizácia na serveri: build z API, kontroly, výmena súborov
 api/data.py           načítanie parquet súborov a dotazy nad nimi
 api/schemas.py        tvar JSON odpovedí (Pydantic modely)
 api/main.py           FastAPI endpointy
-frontend/             React (Vite + TypeScript): mapa sčítačov a detail dňa
+frontend/             React (Vite + TypeScript): mapa sčítačov a detail sčítača
 deploy/               nasadenie na VPS: postup, systemd služby, nginx
 .github/workflows/    CI a nasadenie (test pri pushe do main, prod ručne)
 ```
@@ -153,7 +159,13 @@ npm run dev
 ```
 
 Otvorte http://localhost:5173. Mapa (`/`) ukazuje všetky sčítače. Po kliknutí na sčítač
-sa otvorí detail (`/sensor/{sensor_id}?date=YYYY-MM-DD`) s hodinovým grafom za vybraný deň.
+sa otvorí detail (`/sensor/{sensor_id}`) s tromi záložkami, vybraná je v `?view=`:
+
+- **Deň** (`day`): hodinový graf za deň z `?date=YYYY-MM-DD`
+- **Typický týždeň** (`week`): heatmapa priemeru za hodinu podľa dňa v týždni, s prepínačom smeru
+- **Mesiace** (`months`): priemer za deň v každom mesiaci histórie a priemery podľa kalendárneho mesiaca
+
+Šípkami v hlavičke detailu sa dá prejsť na predchádzajúci / ďalší sčítač.
 Adresa API je v `frontend/src/config.json` (`localUrl` pri vývoji, `serverUrl` v produkcii).
 Pätička na každej stránke uvádza autora a zdroj dát s licenciou (CC BY 4.0), texty a odkazy sú v `frontend/src/Models/Constants.ts`.
 
@@ -164,10 +176,6 @@ zbuildovaný React a požiadavky na `/api` posiela na uvicorn (služba systemd).
 Nasadzuje GitHub Actions: každý push do `main` prejde kontrolami (lint, build, smoke test API)
 a nasadí sa na https://test.chodci.oresky.sk. Na produkciu ide ten istý commit ručným
 spustením workflow. Postup a konfiguračné súbory sú v [`deploy/`](deploy/README.md).
-
-## Ďalšie kroky
-
-Pravidelná aktualizácia dát.
 
 ## Autor a licencia
 
